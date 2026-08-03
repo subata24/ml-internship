@@ -13,7 +13,7 @@
 
 ## 0. Abstract
 
-*Write this section last after the rest of the report is complete.*
+This project investigates whether historical search-performance and content signals can identify pages that are likely to decline in organic search clicks, helping editors prioritize content refresh efforts. Using the FlyRank ML Internship warehouse, page-level features were constructed from February 2026 data and used to predict whether pages experienced a decline in clicks during March 2026. A transparent rule-based baseline, Logistic Regression, and Random Forest models were evaluated using a client-grouped train-test split to prevent information leakage across websites. After correcting a label-construction artifact by excluding pages with fewer than five February clicks, all three approaches performed close to random chance (best AUC = 0.532), indicating that the available features did not provide meaningful predictive signal. The resulting contribution is an evidence-based assessment showing that these signals should not be used for automated refresh prioritization and identifying directions for richer future data and modeling.
 
 ## 1. Problem framing
 
