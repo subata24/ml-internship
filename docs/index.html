@@ -87,9 +87,9 @@ github.com/subata24/ml-internship
 <h2>Abstract</h2>
 
 <p>
-(We'll paste your abstract here.)
+This study investigates which content pages are most likely to decline in organic search performance and therefore should be prioritized for content refresh. Using the FlyRank ML Internship warehouse dataset, page-level features were engineered from February 2026 performance and evaluated against March 2026 outcomes. A transparent baseline rule, Logistic Regression, and Random Forest models were compared using a client-grouped holdout evaluation. After correcting a major floor-effect artifact, all methods performed close to chance, indicating that the available features do not reliably predict future decline. The resulting recommendation is to avoid automated refresh prioritization with this feature set and instead use the findings as decision-support for future data collection and feature engineering.
 </p>
-
+    
 </section>
 
 <section>
@@ -97,7 +97,7 @@ github.com/subata24/ml-internship
 <h2>1. Introduction / Problem Statement</h2>
 
 <p>
-(We'll paste Section 1 here.)
+Content teams have limited time and resources to refresh existing pages, making it important to identify which pages should be reviewed first. This project supports the decision of prioritizing content pages that are most likely to experience a decline in organic search performance. The unit of analysis is a single content page, identified by a client-content pair and summarized at the monthly level. The intended output is a ranked score indicating which pages should be considered for refresh before performance deteriorates further. A wrong recommendation has a practical cost: a false positive wastes editorial effort on a healthy page, while a false negative allows a genuinely declining page to continue losing traffic. Machine learning is explored because it can evaluate multiple performance signals simultaneously and determine whether their combined patterns provide better prioritization than a simple rule-based approach.
 </p>
 
 </section>
@@ -107,7 +107,11 @@ github.com/subata24/ml-internship
 <h2>2. Data</h2>
 
 <p>
-(We'll paste Section 2 here.)
+The analysis uses the FlyRank ML Internship warehouse dataset hosted on Hugging Face. Two tables were used: <code>fact_content_daily_performance</code>, which contains daily Google Search Console and Google Analytics performance metrics, and <code>dim_content</code>, which contains static page-level metadata such as word count, search volume, and content creation date. Features were engineered from February 2026, while March 2026 was used to determine whether a page experienced a decline in organic clicks. The final warehouse month (<code>month=2026-06</code> / the <code>_sample</code> table) was intentionally excluded to avoid evaluating on the same future window used for label construction.
+</p>
+
+<p>
+The unit of analysis is one content page (a client-content pair summarized at the monthly level). Pages without Google Search Console data were excluded because decline could not be measured. Pages with fewer than five February clicks were also removed to eliminate the floor-effect artifact, where pages with almost no traffic cannot meaningfully decline. Human-decision metadata and editorial fields were excluded to prevent leakage, and hashed client and content identifiers were used only for joins and grouping, never as model features. No client names, domains, URLs, or search queries appear anywhere in this work.
 </p>
 
 </section>
@@ -117,9 +121,16 @@ github.com/subata24/ml-internship
 <h2>3. Methodology</h2>
 
 <p>
-(We'll paste Section 3 here.)
+The target variable was a binary label indicating whether a content page's total Google Search Console clicks declined from February 2026 to March 2026. Pages with fewer than five February clicks were excluded before label creation to remove the floor-effect artifact, where pages with almost no traffic cannot meaningfully decline. Features were engineered only from the February "before" snapshot and included average search position, organic sessions, engaged sessions, word count, search volume, content age, and CTR gap (observed CTR minus an expected CTR based on ranking position).
 </p>
 
+<p>
+A transparent rule-based baseline was built first by combining two simple signals: a staleness flag (content age of at least 90 days) and a low CTR flag (CTR gap below −0.02). This baseline served as the reference against which machine learning models were evaluated. Logistic Regression and Random Forest classifiers were then trained using the same feature set and compared directly against the baseline.
+</p>
+
+<p>
+To prevent information leakage across clients, a GroupShuffleSplit was used so that pages from the same client could not appear in both the training and testing sets. Client and content hash identifiers were used only for grouping and joins and were never included as predictive features. Model performance was evaluated using ROC-AUC and Precision@K on the identical held-out test split, ensuring a fair comparison between the baseline and both machine learning models.
+</p>
 </section>
 
 <section>
@@ -127,7 +138,61 @@ github.com/subata24/ml-internship
 <h2>4. Results</h2>
 
 <p>
-(We'll paste results here.)
+All models were evaluated on the same client-grouped held-out test set (test base rate = 0.418). The transparent rule-based baseline achieved an AUC of <strong>0.532</strong>, while Logistic Regression achieved <strong>0.521</strong> and Random Forest achieved <strong>0.499</strong>. Once the floor-effect artifact was removed by excluding pages with fewer than five February clicks, none of the methods demonstrated meaningful discrimination beyond chance. This negative result indicates that the evaluated feature set does not reliably predict which pages will experience a month-over-month decline in organic clicks.
+</p>
+
+<h3>AUC Comparison</h3>
+
+<table>
+<tr>
+<th>Method</th>
+<th>AUC</th>
+</tr>
+<tr>
+<td>Baseline (Rule-based)</td>
+<td>0.532</td>
+</tr>
+<tr>
+<td>Logistic Regression</td>
+<td>0.521</td>
+</tr>
+<tr>
+<td>Random Forest</td>
+<td>0.499</td>
+</tr>
+</table>
+
+<h3>Precision@K</h3>
+
+<table>
+<tr>
+<th>K</th>
+<th>Baseline</th>
+<th>Logistic Regression</th>
+<th>Random Forest</th>
+</tr>
+<tr>
+<td>20</td>
+<td>0.40</td>
+<td>0.80</td>
+<td>0.20</td>
+</tr>
+<tr>
+<td>50</td>
+<td>0.40</td>
+<td>0.60</td>
+<td>0.20</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.45</td>
+<td>0.50</td>
+<td>0.29</td>
+</tr>
+</table>
+
+<p>
+Although Logistic Regression appears to achieve a high Precision@20, this result is misleading because most of the top-ranked pages originated from a single client. The ROC-AUC values and the larger Precision@50 and Precision@100 evaluations provide a more reliable assessment and consistently show performance close to the test-set base rate.
 </p>
 
 <h3>Model Comparison</h3>
@@ -149,7 +214,19 @@ github.com/subata24/ml-internship
 <h2>5. Limitations</h2>
 
 <p>
-(We'll paste Section 5 here.)
+This study found that none of the evaluated methods predicted future content decline meaningfully better than chance once the floor-effect artifact was removed. The rule-based baseline, Logistic Regression, and Random Forest all achieved ROC-AUC values close to 0.50 on a held-out client-grouped test set, indicating that the available features did not provide reliable predictive signal.
+</p>
+
+<p>
+The evaluation was performed on a relatively small number of clients in the test split, making ranking metrics such as Precision@20 sensitive to client concentration. This was observed directly, as one model's highest-ranked predictions were heavily dominated by pages from a single client. Larger ranking thresholds and ROC-AUC therefore provide a more reliable assessment of overall performance.
+</p>
+
+<p>
+The analysis was limited to pages with at least five February clicks, meaning the conclusions apply only to pages with meaningful existing search traffic. The target variable was also a proxy label based solely on month-to-month click changes and should not be interpreted as a direct measure of content quality. Finally, the study examined only a single February-to-March prediction window and does not establish whether similar patterns would hold across other time periods.
+</p>
+
+<p>
+These findings are observational and intended for decision support only. They do not establish that refreshing a page would improve its search performance, and no causal claims about Google's ranking systems or content refresh effects are made.
 </p>
 
 </section>
@@ -159,7 +236,23 @@ github.com/subata24/ml-internship
 <h2>6. Ranked Recommendations</h2>
 
 <p>
-(We'll paste Section 6 here.)
+Based on the evaluation results, this study does not recommend deploying the tested models as an automated content refresh prioritization system. Since the baseline rule, Logistic Regression, and Random Forest all performed close to chance on unseen clients, using their rankings would provide editors with little improvement over manual prioritization.
+</p>
+
+<p>
+For current editorial workflows, human judgment should remain the primary decision-making process. Editors should continue prioritizing pages using business importance, strategic goals, and known content quality issues rather than relying on the evaluated predictive models.
+</p>
+
+<p>
+If a lightweight automated filter is required, the transparent rule-based baseline (combining content age and CTR-underperformance) may be used only as a coarse screening mechanism rather than a ranked recommendation engine. Its modest performance (AUC = 0.532) suggests that it can help identify pages worth reviewing but should not be treated as a reliable predictor of future decline.
+</p>
+
+<p>
+Future work should explore richer search signals that were unavailable in this dataset, including SERP feature changes, competitor ranking movement, backlink trends, multiple historical time windows, and other longitudinal search-performance indicators. These additional signals may provide stronger predictive power than the static page attributes evaluated in this study.
+</p>
+
+<p>
+The primary contribution of this capstone is therefore a validated negative result: under the available data and evaluation design, the tested feature set does not reliably predict future content decline. Reporting this finding honestly helps avoid deploying ineffective models and provides clear direction for future research.
 </p>
 
 </section>
@@ -169,14 +262,28 @@ github.com/subata24/ml-internship
 <h2>7. Reproducibility</h2>
 
 <p>
-Notebook:
+All experiments, notebooks, and supporting materials are available in the public GitHub repository. The project can be reproduced by cloning the repository, installing the required Python dependencies, and executing the notebooks in order from Week 1 through the capstone notebook.
+</p>
+
+<pre><code>
+git clone https://github.com/subata24/ml-internship.git
+cd ml-internship
+pip install duckdb huggingface_hub pandas numpy scikit-learn matplotlib
+</code></pre>
+
+<p>
+The experiments use a fixed <code>random_state=42</code> for all train/test splitting and machine learning models to ensure reproducibility. A client-grouped train/test split (GroupShuffleSplit) was used throughout the evaluation to prevent information leakage between training and testing data.
+</p>
+
+<p>
+Project notebooks:
 <a href="https://github.com/subata24/ml-internship/tree/main/work/notebooks" target="_blank">
 View all notebooks
 </a>
 </p>
 
 <p>
-Repository:
+Complete source code:
 <a href="https://github.com/subata24/ml-internship" target="_blank">
 GitHub Repository
 </a>
