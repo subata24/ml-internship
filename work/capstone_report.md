@@ -1,9 +1,10 @@
-# Capstone Report — <your lane>
 
-- **Author:**
-- **Lane:**
-- **Repo:**
-- **Date:**
+# Capstone Report — Refresh / Content Opportunity Scoring
+
+- **Author:** Subata Khan
+- **Lane:** Refresh / Content Opportunity Scoring
+- **Repo:** https://github.com/subata24/ml-internship
+- **Date:** August 2026
 
 > Copy this file to `work/capstone_report.md` and fill it in as you build. Sections 1–8
 > mirror the Pass / Needs-Work rubric axes, so nothing here is optional. Sections 0 and 9
@@ -12,14 +13,15 @@
 
 ## 0. Abstract
 
-Five sentences, written last, placed first: question → data → method → headline result →
-what the output is for. This is the top of your deployed paper.
+*Write this section last after the rest of the report is complete.*
 
 ## 1. Problem framing
 
-What decision does this support? Name the unit of analysis (page, client, day…), the output
-(score, rank, cluster, report), the action a human takes from it, and the cost of a wrong
-call. Why does data/ML help here at all?
+This project supports the decision of **which content pages should be prioritized for editorial review and refresh**. The unit of analysis is a **content page**, represented by a client-content pair and summarized using February 2026 search performance together with static page metadata. The intended output is a **decline-risk score** that ranks pages according to their likelihood of losing organic search clicks in the following month.
+
+If such a ranking is reliable, content editors can focus limited refresh effort on the highest-risk pages first instead of reviewing every page manually. A false positive wastes editorial time refreshing a page that was unlikely to decline, while a false negative allows a genuinely declining page to lose additional organic traffic before it is reviewed.
+
+Machine learning is appropriate because multiple search and content signals may interact in ways that are difficult to capture with a simple rule. This project evaluates whether combining those signals produces better decision support than a transparent baseline while maintaining an honest validation design that avoids data leakage.
 
 ## 2. Data safety
 
