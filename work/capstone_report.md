@@ -76,17 +76,25 @@ The held-out test set contained **10,747 pages** from **12 unique clients**, wit
 |--------|------:|
 | Baseline Rule | **0.532** |
 | Logistic Regression | **0.521** |
-| Random Forest | **0.499** |
+| Random Forest | **0.505** |
 
-The results show that none of the machine learning models meaningfully outperformed either the baseline rule or random chance. The transparent baseline achieved the highest AUC, while Random Forest performed almost exactly at chance level despite being substantially more complex.
+Precision@K results are shown below. The overall decline base rate on the held-out test set was **41.8%**, so ranking metrics should be interpreted relative to this baseline.
+
+| K | Baseline | Logistic Regression | Random Forest |
+|---:|---:|---:|---:|
+|20|0.15|0.80|0.15|
+|50|0.38|0.60|0.26|
+|100|0.41|0.50|0.35|
+
+The results show that none of the machine learning models meaningfully outperformed either the baseline rule or random chance. The transparent baseline achieved the highest AUC, while Random Forest performed only marginally above random chance despite being substantially more complex.
 
 An earlier version of this project appeared to produce a Random Forest AUC of approximately **0.84**. Investigation showed that this was caused by a floor-effect artifact: pages with zero or near-zero February clicks could never be labeled as declining, allowing the model to exploit the label construction instead of learning genuine predictive patterns. After filtering out pages with fewer than five February clicks, this artificial performance disappeared, demonstrating the importance of careful label design and leakage checks.
 
-Error analysis also revealed that small ranking metrics can be misleading. Although Logistic Regression achieved **Precision@20 = 0.80**, inspection showed that **14 of the top 20 predictions belonged to a single client**, indicating client concentration rather than broadly applicable ranking ability. Larger ranking thresholds (Precision@50 and Precision@100) fell much closer to the overall base rate, supporting the conclusion that no reliable predictive signal was found.
+Although Logistic Regression achieved **Precision@20 = 0.80 (compared with a 41.8% base rate)**, inspection showed that **14 of the top 20 predictions belonged to a single client**, indicating client concentration rather than broadly applicable ranking ability. Larger ranking thresholds (Precision@50 and Precision@100) fell much closer to the overall base rate, supporting the conclusion that no reliable predictive signal was found.
 
 ## 6. Interpretation
 
-The feature importance analysis suggests that **content age** was the strongest variable used by the Random Forest model, followed by **word count**, **CTR gap**, and **average search position**. Organic sessions, search volume, and engaged sessions contributed comparatively little. However, because the Random Forest achieved an AUC of only **0.499**, these feature importance values should not be interpreted as evidence that these variables meaningfully predict future decline. Instead, they simply describe how the model partitioned the available training data.
+The feature importance analysis suggests that **content age** was the strongest variable used by the Random Forest model, followed by **word count**, **CTR gap**, and **average search position**. Organic sessions, search volume, and engaged sessions contributed comparatively little. However, because the Random Forest achieved an AUC of only **0.505**, these feature importance values should not be interpreted as evidence that these variables meaningfully predict future decline. Instead, they simply describe how the model partitioned the available training data.
 
 The most important finding of this project is a **negative result**. After removing the floor-effect artifact by excluding pages with fewer than five February clicks, no meaningful predictive relationship remained between the available features and future click decline. This indicates that the variables tested in this study do not contain enough information to reliably identify pages that will lose organic traffic one month later.
 
@@ -118,6 +126,16 @@ To reproduce the results from a fresh clone:
 2. Install the required Python dependencies (DuckDB, Hugging Face Hub, pandas, NumPy, scikit-learn, matplotlib, and related packages).
 3. Configure a valid Hugging Face access token (`HF_TOKEN`) with permission to access the FlyRank internship warehouse.
 4. Open and run `work/notebooks/capstone.ipynb` from top to bottom without modification.
+
+Environment used:
+
+- Python 3.11
+- duckdb
+- pandas
+- numpy
+- scikit-learn
+- matplotlib
+- huggingface_hub
 
 Model training uses a fixed random seed (`random_state=42`) for both the GroupShuffleSplit validation and the machine learning models to ensure reproducibility. All evaluation metrics reported in this report were generated from a fresh execution of the notebook on the held-out client-grouped test set.
 
